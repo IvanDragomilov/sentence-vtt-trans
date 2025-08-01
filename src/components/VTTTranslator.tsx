@@ -2,13 +2,15 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { VTTParser, VTTGroup } from '@/lib/vttParser';
 import { TranslationService, SUPPORTED_LANGUAGES } from '@/lib/translationService';
-import { Languages, Download, Upload, FileText, CheckCircle, Clock } from 'lucide-react';
+import { Languages, Download, Upload, FileText, CheckCircle, Clock, Key } from 'lucide-react';
 
 interface TranslationProgress {
   current: number;
@@ -25,6 +27,8 @@ export const VTTTranslator = () => {
   const [isTranslating, setIsTranslating] = useState(false);
   const [progress, setProgress] = useState<TranslationProgress | null>(null);
   const [groups, setGroups] = useState<VTTGroup[]>([]);
+  const [apiKey, setApiKey] = useState('');
+  const [provider, setProvider] = useState<'gemini' | 'openai'>('gemini');
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -64,6 +68,15 @@ export const VTTTranslator = () => {
       return;
     }
 
+    if (!apiKey.trim()) {
+      toast({
+        title: "API Key Required",
+        description: `Please enter your ${provider === 'gemini' ? 'Gemini' : 'OpenAI'} API key`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsTranslating(true);
     setProgress({ current: 0, total: groups.length, stage: "Parsing" });
 
@@ -88,7 +101,7 @@ export const VTTTranslator = () => {
           text: group.combinedText,
           sourceLanguage,
           targetLanguage
-        });
+        }, apiKey, provider);
 
         if (translationResult.success) {
           // Step 4: Redistribute translated text
@@ -155,6 +168,47 @@ export const VTTTranslator = () => {
           Preserves timing while ensuring contextually accurate translations.
         </p>
       </div>
+
+      {/* API Configuration */}
+      <Card className="p-6">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Key className="w-5 h-5 text-primary" />
+            <h3 className="text-lg font-semibold">API Configuration</h3>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="provider">Translation Provider</Label>
+              <Select value={provider} onValueChange={(value) => setProvider(value as 'gemini' | 'openai')}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="gemini">Google Gemini</SelectItem>
+                  <SelectItem value="openai">OpenAI ChatGPT</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="md:col-span-2 space-y-2">
+              <Label htmlFor="apiKey">
+                {provider === 'gemini' ? 'Gemini API Key' : 'OpenAI API Key'}
+              </Label>
+              <Input
+                type="password"
+                placeholder={`Enter your ${provider === 'gemini' ? 'Gemini' : 'OpenAI'} API key...`}
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Your API key is stored locally and never sent to external servers.
+                {provider === 'gemini' ? ' Get your key from Google AI Studio.' : ' Get your key from OpenAI platform.'}
+              </p>
+            </div>
+          </div>
+        </div>
+      </Card>
 
       {/* Language Selection */}
       <Card className="p-6">
@@ -265,7 +319,7 @@ export const VTTTranslator = () => {
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
         <Button
           onClick={translateVTT}
-          disabled={!vttContent || isTranslating}
+          disabled={!vttContent || isTranslating || !apiKey}
           className="flex items-center gap-2"
           size="lg"
         >
