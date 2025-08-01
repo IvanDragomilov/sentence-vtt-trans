@@ -34,8 +34,8 @@ export class TranslationService {
         success: true
       };
     } catch (error) {
-      // Fallback to mock translation if API fails
-      console.warn('Translation API failed, using fallback:', error);
+      // Log error for debugging
+      console.error('Translation API failed:', error);
       
       const translatedText = this.mockTranslate(
         request.text, 
@@ -45,7 +45,8 @@ export class TranslationService {
 
       return {
         translatedText,
-        success: true
+        success: false,
+        error: error instanceof Error ? error.message : 'Translation API failed'
       };
     }
   }
@@ -213,12 +214,6 @@ export const SUPPORTED_LANGUAGES = [
   { code: 'de', name: 'German' },
   { code: 'it', name: 'Italian' },
   { code: 'pt', name: 'Portuguese' },
-  { code: 'ru', name: 'Russian' },
-  { code: 'ja', name: 'Japanese' },
-  { code: 'ko', name: 'Korean' },
-  { code: 'zh', name: 'Chinese' },
-  { code: 'ar', name: 'Arabic' },
-  { code: 'hi', name: 'Hindi' },
   { code: 'nl', name: 'Dutch' },
   { code: 'sv', name: 'Swedish' },
   { code: 'no', name: 'Norwegian' },
@@ -226,5 +221,17 @@ export const SUPPORTED_LANGUAGES = [
   { code: 'fi', name: 'Finnish' },
   { code: 'pl', name: 'Polish' },
   { code: 'tr', name: 'Turkish' },
-  { code: 'th', name: 'Thai' }
+  { code: 'uk', name: 'Ukrainian' },
+  { code: 'ru', name: 'Russian' },
+  { code: 'cs', name: 'Czech' },
+  { code: 'sk', name: 'Slovak' },
+  { code: 'hu', name: 'Hungarian' },
+  { code: 'ro', name: 'Romanian' },
+  { code: 'bg', name: 'Bulgarian' },
+  { code: 'hr', name: 'Croatian' },
+  { code: 'sl', name: 'Slovenian' },
+  { code: 'et', name: 'Estonian' },
+  { code: 'lv', name: 'Latvian' },
+  { code: 'lt', name: 'Lithuanian' },
+  { code: 'el', name: 'Greek' }
 ];
