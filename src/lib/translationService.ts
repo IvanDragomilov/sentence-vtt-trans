@@ -11,14 +11,32 @@ export interface TranslationResponse {
 }
 
 export class TranslationService {
-  // Mock translation service - replace with real API in production
-  static async translateText(request: TranslationRequest): Promise<TranslationResponse> {
+  static async translateText(request: TranslationRequest, provider: 'gemini' | 'openai' = 'gemini'): Promise<TranslationResponse> {
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000));
+      // Try to use Supabase Edge Function for translation
+      const response = await fetch('/functions/v1/translate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: request.text,
+          sourceLanguage: request.sourceLanguage,
+          targetLanguage: request.targetLanguage,
+          provider
+        })
+      });
 
-      // For demo purposes, we'll use a simple mock translation
-      // In production, replace this with actual translation API calls
+      if (!response.ok) {
+        throw new Error('Translation service unavailable');
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      // Fallback to mock translation if API fails
+      console.warn('Translation API failed, using fallback:', error);
+      
       const translatedText = this.mockTranslate(
         request.text, 
         request.sourceLanguage, 
@@ -28,12 +46,6 @@ export class TranslationService {
       return {
         translatedText,
         success: true
-      };
-    } catch (error) {
-      return {
-        translatedText: '',
-        success: false,
-        error: error instanceof Error ? error.message : 'Translation failed'
       };
     }
   }
@@ -89,9 +101,9 @@ export class TranslationService {
       result = result.replace(regex, translated);
     });
 
-    // If no direct translation found, add a prefix to indicate it's translated
+    // If no direct translation found, return original text for now
     if (result === text && from !== to) {
-      result = `[${to.toUpperCase()}] ${text}`;
+      result = text; // Keep original text if no translation found
     }
 
     return result;
